@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sync - AI Translation",
+  title: "Sync - Cloud Translation Service",
   description:
-    "Translate to Nigerian languages and more with AI-powered translation",
+    "A web application for translating text using cloud translation services like Azure Translator.",
 };
 
 export default function RootLayout({
