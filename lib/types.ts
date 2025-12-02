@@ -4,6 +4,8 @@ export interface TranslationHistory {
   translated_text: string;
   target_language: string;
   detected_language: string;
+  edited?: boolean;
+  editedAt?: string;
 }
 
 export interface ChatSession {

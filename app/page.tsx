@@ -22,9 +22,31 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ChatSession, TranslationHistory } from "@/lib/types";
-import { Loader2, Send, Copy, Check, Settings } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  Copy,
+  Check,
+  Settings,
+  Share2,
+  Edit2,
+  Languages,
+} from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { AnimatedThemeToggler } from "@/components/AnimatedThemeToggler";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Featured Nigerian Languages
 const NIGERIAN_LANGUAGES = [
@@ -77,6 +99,8 @@ export default function Home() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [showClearAlert, setShowClearAlert] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const CHARACTER_LIMIT = 5000;
@@ -291,6 +315,106 @@ export default function Home() {
       toast.error("Failed to copy", {
         description: "Please try again",
       });
+    }
+  };
+
+  const shareText = async (text: string) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          text: text,
+        });
+        toast.success("Shared successfully!");
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast.success("Copied to clipboard!", {
+          description: "Share via clipboard",
+        });
+      }
+    } catch (error) {
+      if ((error as Error).name !== "AbortError") {
+        console.error("Failed to share:", error);
+        toast.error("Failed to share");
+      }
+    }
+  };
+
+  const formatRelativeTime = (timestamp: string) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffInSeconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)}d ago`;
+
+    return then.toLocaleDateString();
+  };
+
+  const startEditMessage = (index: number) => {
+    if (!activeSession) return;
+    const conv = activeSession.conversations[index];
+    setEditText(conv.source_text);
+    setEditingIndex(index);
+  };
+
+  const saveEditedMessage = async (index: number) => {
+    if (!activeSession || !editText.trim()) return;
+
+    const conversation = activeSession.conversations[index];
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: editText,
+          targetLanguage: conversation.target_language,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Translation failed");
+      }
+
+      const data = await response.json();
+
+      setChatSessions((prev) =>
+        prev.map((session) =>
+          session.id === activeSessionId
+            ? {
+                ...session,
+                conversations: session.conversations.map((conv, i) =>
+                  i === index
+                    ? {
+                        ...conv,
+                        source_text: editText,
+                        translated_text: data.translatedText,
+                        detected_language: data.detectedLanguage,
+                        edited: true,
+                        editedAt: new Date().toISOString(),
+                      }
+                    : conv
+                ),
+              }
+            : session
+        )
+      );
+
+      setEditingIndex(null);
+      setEditText("");
+      toast.success("Message updated!");
+    } catch (error) {
+      console.error("Edit translation error:", error);
+      toast.error("Failed to update message");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -566,6 +690,76 @@ export default function Home() {
                       <div className="flex gap-2 sm:gap-3 justify-end mb-3 sm:mb-4">
                         <div className="max-w-[85%] sm:max-w-[70%] flex justify-end">
                           <div className="inline-block">
+                            <div className="flex items-center gap-2 mb-1 justify-end">
+                              <span className="text-xs text-muted-foreground">
+                                {formatRelativeTime(
+                                  conv.editedAt || conv.timestamp
+                                )}
+                              </span>
+                              {conv.edited && (
+                                <span className="text-xs text-muted-foreground italic">
+                                  (edited)
+                                </span>
+                              )}
+                              <Popover
+                                open={editingIndex === index}
+                                onOpenChange={(open) => {
+                                  if (!open) {
+                                    setEditingIndex(null);
+                                    setEditText("");
+                                  }
+                                }}
+                              >
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 hover:bg-muted"
+                                    onClick={() => startEditMessage(index)}
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                  <div className="space-y-3">
+                                    <h4 className="font-medium text-sm">
+                                      Edit Message
+                                    </h4>
+                                    <Textarea
+                                      value={editText}
+                                      onChange={(e) =>
+                                        setEditText(e.target.value)
+                                      }
+                                      className="min-h-[100px]"
+                                      placeholder="Edit your message..."
+                                    />
+                                    <div className="flex gap-2 justify-end">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          setEditingIndex(null);
+                                          setEditText("");
+                                        }}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => saveEditedMessage(index)}
+                                        disabled={!editText.trim() || loading}
+                                      >
+                                        {loading ? (
+                                          <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                          "Save"
+                                        )}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
                             <p className="text-sm sm:text-base leading-relaxed text-foreground bg-primary/10 rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5">
                               {conv.source_text}
                             </p>
@@ -574,45 +768,17 @@ export default function Home() {
                         <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-xs sm:text-sm">
                           U
                         </div>
-                      </div>{" "}
+                      </div>
                       {/* AI Response - BOTTOM LEFT */}
                       <div className="flex gap-2 sm:gap-3">
                         <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center font-semibold text-xs sm:text-sm">
                           AI
                         </div>
-                        <div className="flex-1 space-y-1.5 pt-0.5">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Select
-                              value={conv.target_language}
-                              onValueChange={(newLang) =>
-                                retranslateMessage(index, newLang)
-                              }
-                              disabled={retranslatingIndex === index}
-                            >
-                              <SelectTrigger className="w-auto h-6 text-xs border-0 bg-transparent hover:bg-muted px-2">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                                  Nigerian Languages
-                                </div>
-                                {NIGERIAN_LANGUAGES.map((lang) => (
-                                  <SelectItem key={lang.code} value={lang.code}>
-                                    {lang.name}
-                                  </SelectItem>
-                                ))}
-                                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-1">
-                                  Other Languages
-                                </div>
-                                {OTHER_LANGUAGES.map((lang) => (
-                                  <SelectItem key={lang.code} value={lang.code}>
-                                    {lang.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                        <div className="flex-1 space-y-2 pt-0.5">
+                          <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground">
-                              from {conv.detected_language.toUpperCase()}
+                              {conv.target_language.toUpperCase()} from{" "}
+                              {conv.detected_language.toUpperCase()}
                             </span>
                           </div>
                           {retranslatingIndex === index ? (
@@ -621,25 +787,87 @@ export default function Home() {
                               <span className="text-sm">Translating...</span>
                             </div>
                           ) : (
-                            <div className="flex items-start gap-2">
-                              <p className="text-sm sm:text-base leading-relaxed flex-1">
+                            <>
+                              <p className="text-sm sm:text-base leading-relaxed">
                                 {conv.translated_text}
                               </p>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 shrink-0 hover:bg-muted"
-                                onClick={() =>
-                                  copyToClipboard(conv.translated_text, index)
-                                }
-                              >
-                                {copiedIndex === index ? (
-                                  <Check className="w-3.5 h-3.5 text-green-500" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5" />
-                                )}
-                              </Button>
-                            </div>
+                              {/* Action Buttons */}
+                              <div className="flex items-center gap-1 pt-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs hover:bg-muted"
+                                  onClick={() =>
+                                    copyToClipboard(conv.translated_text, index)
+                                  }
+                                >
+                                  {copiedIndex === index ? (
+                                    <>
+                                      <Check className="w-3 h-3 mr-1 text-green-500" />
+                                      Copied
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3 h-3 mr-1" />
+                                      Copy
+                                    </>
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs hover:bg-muted"
+                                  onClick={() =>
+                                    shareText(conv.translated_text)
+                                  }
+                                >
+                                  <Share2 className="w-3 h-3 mr-1" />
+                                  Share
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 px-2 text-xs hover:bg-muted"
+                                      disabled={retranslatingIndex === index}
+                                    >
+                                      <Languages className="w-3 h-3 mr-1" />
+                                      Translate
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start">
+                                    <DropdownMenuLabel>
+                                      Nigerian Languages
+                                    </DropdownMenuLabel>
+                                    {NIGERIAN_LANGUAGES.map((lang) => (
+                                      <DropdownMenuItem
+                                        key={lang.code}
+                                        onClick={() =>
+                                          retranslateMessage(index, lang.code)
+                                        }
+                                      >
+                                        {lang.name}
+                                      </DropdownMenuItem>
+                                    ))}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel>
+                                      Other Languages
+                                    </DropdownMenuLabel>
+                                    {OTHER_LANGUAGES.map((lang) => (
+                                      <DropdownMenuItem
+                                        key={lang.code}
+                                        onClick={() =>
+                                          retranslateMessage(index, lang.code)
+                                        }
+                                      >
+                                        {lang.name}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </>
                           )}
                         </div>
                       </div>
