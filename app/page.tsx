@@ -24,6 +24,7 @@ import {
 import { ChatSession, TranslationHistory } from "@/lib/types";
 import { Loader2, Send, Copy, Check, Settings } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { AnimatedThemeToggler } from "@/components/AnimatedThemeToggler";
 
 // Featured Nigerian Languages
 const NIGERIAN_LANGUAGES = [
@@ -284,7 +285,6 @@ export default function Home() {
       toast.success("Copied to clipboard!", {
         description: "Translation copied successfully",
         duration: 2000,
-        position: "bottom-right",
       });
     } catch (error) {
       console.error("Failed to copy:", error);
@@ -504,14 +504,17 @@ export default function Home() {
                 Powered by Azure
               </span>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setShowSettings(true)}
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <AnimatedThemeToggler />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowSettings(true)}
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -686,18 +689,18 @@ export default function Home() {
                 className="flex-1 bg-transparent px-2 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 border-0 resize-none min-h-10 max-h-[200px]"
                 rows={1}
               />
-                <Button
+              <Button
                 onClick={handleTranslate}
                 disabled={!sourceText.trim() || loading}
                 size="icon"
                 className="rounded-lg h-8 w-8 shrink-0 self-center"
-                >
+              >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
-                </Button>
+              </Button>
             </div>
 
             {/* Character Count Warning */}
@@ -848,7 +851,7 @@ export default function Home() {
       </AlertDialog>
 
       {/* Toast Container */}
-      <Toaster position="top-center" richColors />
+      <Toaster position="bottom-right" />
     </div>
   );
 }
