@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,10 +22,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ChatSession, TranslationHistory } from "@/lib/types";
-import { Loader2, Send, Copy, Check } from "lucide-react";
+import { Loader2, Send, Copy, Check, Settings } from "lucide-react";
+import { toast, Toaster } from "sonner";
 
 // Featured Nigerian Languages
 const NIGERIAN_LANGUAGES = [
+  { code: "ig", name: "🇳🇬 Igbo", flag: "🇳🇬" },
+  { code: "yo", name: "🇳🇬 Yoruba", flag: "🇳🇬" },
+  { code: "ha", name: "🇳🇬 Hausa", flag: "🇳🇬" },
+];
+
+const QUICK_LANGUAGES = [
+  { code: "en", name: "🇺🇸 English", flag: "🇺🇸" },
   { code: "ig", name: "🇳🇬 Igbo", flag: "🇳🇬" },
   { code: "yo", name: "🇳🇬 Yoruba", flag: "🇳🇬" },
   { code: "ha", name: "🇳🇬 Hausa", flag: "🇳🇬" },
@@ -66,7 +75,10 @@ export default function Home() {
   );
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [showClearAlert, setShowClearAlert] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const CHARACTER_LIMIT = 5000;
 
   const activeSession = chatSessions.find((s) => s.id === activeSessionId);
 
@@ -269,8 +281,16 @@ export default function Home() {
       await navigator.clipboard.writeText(text);
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 2000);
+      toast.success("Copied to clipboard!", {
+        description: "Translation copied successfully",
+        duration: 2000,
+        position: "bottom-right",
+      });
     } catch (error) {
       console.error("Failed to copy:", error);
+      toast.error("Failed to copy", {
+        description: "Please try again",
+      });
     }
   };
 
@@ -344,7 +364,7 @@ export default function Home() {
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-60 md:hidden animate-in fade-in duration-200">
           <div
             className="absolute inset-0 bg-background/80"
             onClick={() => setSidebarOpen(false)}
@@ -484,6 +504,14 @@ export default function Home() {
                 Powered by Azure
               </span>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowSettings(true)}
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
           </div>
         </header>
 
@@ -643,40 +671,54 @@ export default function Home() {
         <div className="fixed bottom-0 right-0 left-0 md:left-64 bg-background border-t z-10">
           <div className="px-3 py-3 sm:py-4 max-w-3xl mx-auto w-full">
             {/* Input Box */}
-            <div className="relative">
-              <div className="relative flex items-center gap-2 bg-muted/30 rounded-2xl border border-border/50 p-2 focus-within:border-border transition-colors">
-                <input
-                  type="text"
-                  value={sourceText}
-                  onChange={(e) => setSourceText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleTranslate();
-                    }
-                  }}
-                  placeholder="Message Sync..."
-                  disabled={loading}
-                  className="flex-1 bg-transparent px-2 py-2 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
-                />
+            <div className="relative flex items-end gap-2 rounded-2xl focus-within:border-border transition-colors">
+              <Textarea
+                value={sourceText}
+                onChange={(e) => setSourceText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleTranslate();
+                  }
+                }}
+                placeholder="Message Sync..."
+                disabled={loading}
+                className="flex-1 bg-transparent px-2 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 border-0 resize-none min-h-10 max-h-[200px]"
+                rows={1}
+              />
                 <Button
-                  onClick={handleTranslate}
-                  disabled={!sourceText.trim() || loading}
-                  size="icon"
-                  className="rounded-lg h-8 w-8 shrink-0"
+                onClick={handleTranslate}
+                disabled={!sourceText.trim() || loading}
+                size="icon"
+                className="rounded-lg h-8 w-8 shrink-0 self-center"
                 >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
                 </Button>
-              </div>
             </div>
+
+            {/* Character Count Warning */}
+            {sourceText.length > CHARACTER_LIMIT * 0.8 && (
+              <div className="mt-2 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-xs text-yellow-600 dark:text-yellow-500">
+                {sourceText.length >= CHARACTER_LIMIT ? (
+                  <span className="font-medium">
+                    ⚠️ Character limit reached ({CHARACTER_LIMIT} max)
+                  </span>
+                ) : (
+                  <span>
+                    {sourceText.length}/{CHARACTER_LIMIT} characters (limit
+                    warning)
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Language Selector Pills */}
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              {NIGERIAN_LANGUAGES.map((lang) => (
+              {QUICK_LANGUAGES.map((lang) => (
                 <button
                   key={lang.code}
                   onClick={() => quickSelectLanguage(lang.code)}
@@ -738,6 +780,75 @@ export default function Home() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Settings Dialog */}
+      <AlertDialog open={showSettings} onOpenChange={setShowSettings}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">Settings</AlertDialogTitle>
+            <AlertDialogDescription className="sr-only">
+              Application settings and information
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-6 py-4">
+            {/* Theme Section */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Theme</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Theme is managed by your system preferences. Toggle dark/light
+                mode from your OS settings.
+              </p>
+            </div>
+
+            {/* Character Limit Info */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Translation Limits</h3>
+              <p className="text-sm text-muted-foreground">
+                Maximum characters per translation:{" "}
+                {CHARACTER_LIMIT.toLocaleString()}
+              </p>
+            </div>
+
+            {/* About Section */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2">About</h3>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  <strong className="text-foreground">Sync</strong> - AI
+                  Translation for Nigerian Languages
+                </p>
+                <p>
+                  Powered by Azure Translator API with support for Igbo, Yoruba,
+                  Hausa, and 20+ other languages.
+                </p>
+                <p className="text-xs">
+                  Version 1.0.0 • Built with Next.js & Azure
+                </p>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Features</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>✓ Chat-style interface</li>
+                <li>✓ Multiple session management</li>
+                <li>✓ Instant retranslation</li>
+                <li>✓ Local storage persistence</li>
+                <li>✓ Copy to clipboard</li>
+              </ul>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowSettings(false)}>
+              Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toast Container */}
+      <Toaster position="top-center" richColors />
     </div>
   );
 }

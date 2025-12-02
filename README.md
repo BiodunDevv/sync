@@ -1,53 +1,57 @@
-# Azure Translator - Next.js 16 Translation System
+# Sync - AI Translation Chat
 
-A full-featured translation web application built with Next.js 16, ShadCN UI components, and Azure Translator API. The app supports multiple target languages, automatically detects source languages, and stores translation history in local storage.
+A modern chat-first translation web application built with Next.js 16, ShadCN UI, and Azure Translator API. Experience seamless translation through an intuitive ChatGPT-style interface with persistent chat sessions and Nigerian language support.
 
 ## Features
 
-✅ **Real-time Translation** - Translate text instantly using Azure Translator API  
+✅ **Chat-Style Interface** - Modern conversational UI similar to ChatGPT  
+✅ **Persistent Sessions** - Create and manage multiple chat sessions  
+✅ **Real-time Translation** - Instant translation using Azure Translator API  
 ✅ **Auto-detect Source Language** - Automatically identifies the input language  
-✅ **Multiple Languages** - Support for 17+ languages including Afrikaans, Arabic, Chinese, Dutch, English, French, German, Hindi, Italian, Japanese, Korean, Portuguese, Russian, Spanish, Swahili, and Zulu  
-✅ **Translation History** - Saves all translations to browser's local storage  
-✅ **Scrollable History Panel** - View past translations with timestamps  
-✅ **Clear History** - Option to clear all saved translations  
-✅ **Responsive UI** - Mobile-first design using ShadCN components  
-✅ **Dark Mode Support** - Automatic dark mode based on system preferences
+✅ **Nigerian Languages Featured** - Quick access to Igbo, Yoruba, and Hausa  
+✅ **17+ Supported Languages** - Including Afrikaans, Arabic, Chinese, Dutch, English, French, German, Hindi, Italian, Japanese, Korean, Portuguese, Russian, Spanish, Swahili, and Zulu  
+✅ **Retranslation** - Change target language for any AI response  
+✅ **Copy to Clipboard** - One-click copy of translations  
+✅ **Session History** - All conversations saved to browser local storage  
+✅ **Responsive Design** - Smooth mobile experience with slide-out sidebar  
+✅ **Dark Mode Support** - Default dark theme with system preference support  
+✅ **Fixed Header & Input** - ChatGPT-like layout with scrollable conversation area
 
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **UI Components**: ShadCN UI
+- **UI Components**: ShadCN UI (Button, Select, ScrollArea, AlertDialog)
+- **Icons**: Lucide React
 - **Styling**: Tailwind CSS v4
 - **Translation API**: Azure Cognitive Services Translator API
 - **Storage**: Browser Local Storage
+- **Theme**: next-themes
 
 ## Project Structure
 
-```
+```text
 sync/
 ├── app/
 │   ├── api/
 │   │   └── translate/
 │   │       └── route.ts          # Backend API route for translation
 │   ├── globals.css               # Global styles
-│   ├── layout.tsx                # Root layout
-│   └── page.tsx                  # Main translation page
+│   ├── layout.tsx                # Root layout with ThemeProvider
+│   └── page.tsx                  # Main chat interface (700+ lines)
 ├── components/
-│   ├── ui/                       # ShadCN UI components
-│   │   ├── button.tsx
-│   │   ├── card.tsx
-│   │   ├── input.tsx
-│   │   ├── label.tsx
-│   │   ├── scroll-area.tsx
-│   │   └── select.tsx
-│   ├── ChatHistory.tsx           # Translation history component
-│   ├── TranslateButton.tsx       # Translate action button
-│   ├── TranslatedText.tsx        # Display translated text
-│   └── TranslationInput.tsx      # Input field component
+│   └── ui/                       # ShadCN UI components
+│       ├── alert-dialog.tsx      # Confirmation modals
+│       ├── button.tsx
+│       ├── scroll-area.tsx
+│       └── select.tsx
 ├── lib/
 │   ├── translator.ts             # Azure Translator API utility
-│   ├── types.ts                  # TypeScript type definitions
+│   ├── types.ts                  # TypeScript interfaces
+│   │   ├── TranslationHistory
+│   │   ├── ChatSession
+│   │   ├── AzureTranslatorResponse
+│   │   └── TranslateRequest/Response
 │   └── utils.ts                  # Utility functions
 ├── .env.local                    # Environment variables (API keys)
 └── package.json
@@ -81,12 +85,14 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 ## Usage
 
-1. **Enter Text**: Type or paste text into the input field
-2. **Select Target Language**: Choose your desired translation language from the dropdown
-3. **Translate**: Click the "Translate" button
-4. **View Translation**: The translated text appears below with source → target language indication
-5. **View History**: All translations are saved and displayed in the history panel
-6. **Clear History**: Click "Clear History" to remove all saved translations
+1. **Create/Select Chat**: Click "+ New Chat" or select an existing session from the sidebar
+2. **Choose Language**: Select target language from the pills below the input (Igbo, Yoruba, Hausa featured) or use the "More" dropdown
+3. **Send Message**: Type your text and press Enter or click the send button
+4. **View Translation**: AI responds with the translation, showing detected source language
+5. **Retranslate**: Click the language dropdown on any AI response to translate to a different language
+6. **Copy Translation**: Click the copy icon next to any translation
+7. **Manage Sessions**: View all chat sessions in the sidebar, delete individual chats, or use "Clear All Chats" with confirmation
+8. **Mobile**: Tap the menu icon to open the sidebar overlay
 
 ## API Endpoints
 
@@ -115,6 +121,14 @@ Translates text using Azure Translator API.
 
 ## Supported Languages
 
+### Featured Nigerian Languages
+
+- **ig** - 🇳🇬 Igbo
+- **yo** - 🇳🇬 Yoruba
+- **ha** - 🇳🇬 Hausa
+
+### Other Languages
+
 - **af** - Afrikaans
 - **ar** - Arabic
 - **zh-Hans** - Chinese (Simplified)
@@ -135,9 +149,23 @@ Translates text using Azure Translator API.
 
 ## Local Storage
 
-Translation history is stored in `localStorage` under `translation_history`:
+Chat sessions are persisted in `localStorage`:
+
+**Keys:**
+
+- `sync_chat_sessions` - Array of chat sessions with conversations
+- `sync_active_session` - ID of the currently active session
+
+**Interfaces:**
 
 ```typescript
+interface ChatSession {
+  id: string;
+  title: string;
+  timestamp: string;
+  conversations: TranslationHistory[];
+}
+
 interface TranslationHistory {
   timestamp: string;
   source_text: string;
