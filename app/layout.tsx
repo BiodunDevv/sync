@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sync - Cloud Translation Service | Azure-Powered AI",
+  title: "Sync - Multi-Cloud Services Platform",
   description:
-    "Cloud-based translation service powered by Microsoft Azure. Send text through our API, Azure processes it on remote servers, detects languages, and returns instant translations. No local processing required—all computing happens in the cloud. Supports Igbo, Yoruba, Hausa, and 20+ languages with on-demand scaling and security.",
+    "Sync: Your unified multi-cloud platform featuring Azure Translation, Brevo Email Service, and OpenWeather API. Experience seamless cloud services - translate to 20+ languages with Azure AI, send professional emails via Brevo, and access real-time weather data worldwide. 100% cloud-powered with zero local processing.",
 };
 
 export default function RootLayout({

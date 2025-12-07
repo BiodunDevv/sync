@@ -1,52 +1,92 @@
-# Sync - AI Translation Chat
+# Sync Cloud - Multi-Cloud Services Platform
 
-A modern chat-first translation web application built with Next.js 16, ShadCN UI, and Azure Translator API. Experience seamless translation through an intuitive ChatGPT-style interface with persistent chat sessions and Nigerian language support.
+A modern multi-cloud platform built with Next.js 16 and ShadCN UI, featuring three powerful cloud services: Azure Translation, Brevo Email, and OpenWeather API. Access enterprise-grade cloud services through beautiful, intuitive interfaces.
 
-## Features
+## 🌐 Cloud Services
 
-✅ **Chat-Style Interface** - Modern conversational UI similar to ChatGPT  
-✅ **Persistent Sessions** - Create and manage multiple chat sessions  
-✅ **Real-time Translation** - Instant translation using Azure Translator API  
-✅ **Auto-detect Source Language** - Automatically identifies the input language  
-✅ **Nigerian Languages Featured** - Quick access to Igbo, Yoruba, and Hausa  
-✅ **17+ Supported Languages** - Including Afrikaans, Arabic, Chinese, Dutch, English, French, German, Hindi, Italian, Japanese, Korean, Portuguese, Russian, Spanish, Swahili, and Zulu  
-✅ **Retranslation** - Change target language for any AI response  
-✅ **Copy to Clipboard** - One-click copy of translations  
-✅ **Session History** - All conversations saved to browser local storage  
-✅ **Responsive Design** - Smooth mobile experience with slide-out sidebar  
-✅ **Dark Mode Support** - Default dark theme with system preference support  
-✅ **Fixed Header & Input** - ChatGPT-like layout with scrollable conversation area
+### 1. **Azure Translator** (`/translate`)
 
-## Tech Stack
+- ChatGPT-style translation interface
+- 20+ languages with Nigerian language support (Igbo, Yoruba, Hausa)
+- Real-time translation with auto-detection
+- Persistent chat sessions
+- Retranslation to different languages
+- Copy and share translations
+
+### 2. **Brevo Email** (`/email`)
+
+- Send beautifully formatted HTML emails
+- Custom email templates with gradient styling
+- Test email functionality
+- Real-time delivery status
+- Professional email layouts
+
+### 3. **OpenWeather** (`/weather`)
+
+- Real-time weather data for any city
+- Current conditions with detailed metrics
+- Temperature, humidity, wind speed, visibility
+- Sunrise/sunset times
+- Weather icons and descriptions
+
+## ✨ Features
+
+✅ **Multi-Cloud Platform** - Three cloud services in one unified interface  
+✅ **Modern UI** - Built entirely with ShadCN components  
+✅ **Cloud-Powered** - No local processing, 100% cloud computing  
+✅ **Responsive Design** - Beautiful on desktop, tablet, and mobile  
+✅ **Dark Mode** - System-aware theme switching  
+✅ **Toast Notifications** - Real-time feedback with Sonner  
+✅ **Type-Safe** - Full TypeScript implementation  
+✅ **API Routes** - Next.js server-side API endpoints
+
+## 🛠 Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **UI Components**: ShadCN UI (Button, Select, ScrollArea, AlertDialog)
+- **UI Components**: ShadCN UI (Card, Button, Input, Textarea, Dropdown, etc.)
 - **Icons**: Lucide React
 - **Styling**: Tailwind CSS v4
-- **Translation API**: Azure Cognitive Services Translator API
-- **Storage**: Browser Local Storage
+- **Notifications**: Sonner
 - **Theme**: next-themes
 
-## Project Structure
+## ☁️ Cloud APIs
+
+- **Azure Translator API** - Microsoft Cognitive Services
+- **Brevo Email API** - Professional email delivery service
+- **OpenWeather API** - Real-time weather data
+
+## 📁 Project Structure
 
 ```text
 sync/
 ├── app/
 │   ├── api/
-│   │   └── translate/
-│   │       └── route.ts          # Backend API route for translation
+│   │   ├── translate/
+│   │   │   └── route.ts          # Azure translation endpoint
+│   │   ├── send-email/
+│   │   │   └── route.ts          # Brevo email endpoint
+│   │   └── weather/
+│   │       └── route.ts          # OpenWeather endpoint
+│   ├── translate/
+│   │   └── page.tsx              # Translation chat interface
+│   ├── email/
+│   │   └── page.tsx              # Email testing interface
+│   ├── weather/
+│   │   └── page.tsx              # Weather dashboard
 │   ├── globals.css               # Global styles
 │   ├── layout.tsx                # Root layout with ThemeProvider
-│   └── page.tsx                  # Main chat interface (700+ lines)
+│   └── page.tsx                  # Welcome/landing page
 ├── components/
 │   └── ui/                       # ShadCN UI components
-│       ├── alert-dialog.tsx      # Confirmation modals
+│       ├── card.tsx
 │       ├── button.tsx
-│       ├── scroll-area.tsx
-│       └── select.tsx
+│       ├── input.tsx
+│       ├── textarea.tsx
+│       ├── dropdown-menu.tsx
+│       └── ... (more components)
 ├── lib/
-│   ├── translator.ts             # Azure Translator API utility
+│   ├── translator.ts             # Azure Translator utility
 │   ├── types.ts                  # TypeScript interfaces
 │   │   ├── TranslationHistory
 │   │   ├── ChatSession
@@ -67,13 +107,28 @@ npm install
 
 ### 2. Environment Variables
 
-The `.env.local` file is already configured with Azure Translator API credentials:
+Create or update `.env.local` with the following API credentials:
 
 ```env
-NEXT_PUBLIC_TRANSLATOR_API_KEY=your_api_key
+# Azure Translator API
+NEXT_PUBLIC_TRANSLATOR_API_KEY=your_azure_api_key
 NEXT_PUBLIC_TRANSLATOR_REGION=southafricanorth
 NEXT_PUBLIC_TRANSLATOR_ENDPOINT=https://api.cognitive.microsofttranslator.com
+
+# Brevo Email Service
+BREVO_API_KEY=your_brevo_api_key
+BREVO_SENDER_EMAIL=your_sender_email@example.com
+BREVO_SENDER_NAME=Your Name
+
+# OpenWeather API
+NEXT_PUBLIC_OPENWEATHER_API_KEY=your_openweather_api_key
 ```
+
+**Get your API keys:**
+
+- Azure Translator: [Azure Portal](https://portal.azure.com)
+- Brevo: [Brevo Dashboard](https://app.brevo.com)
+- OpenWeather: [OpenWeather API](https://openweathermap.org/api)
 
 ### 3. Run Development Server
 
