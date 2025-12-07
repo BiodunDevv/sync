@@ -27,6 +27,10 @@ import {
   Home as HomeIcon,
   Navigation,
   Satellite,
+  Menu,
+  X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import dynamic from "next/dynamic";
@@ -63,6 +67,8 @@ export default function LocationPage() {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -131,10 +137,80 @@ export default function LocationPage() {
 
   return (
     <div className="flex h-screen bg-background flex-col">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-9999 md:hidden animate-in fade-in duration-200">
+          <div
+            className="absolute inset-0 bg-background/80"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-card border-r flex flex-col animate-in slide-in-from-left duration-300">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h2 className="font-semibold">Menu</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {location && (
+              <div className="p-4 border-b">
+                <Button
+                  onClick={() => {
+                    setShowDetails(!showDetails);
+                    setSidebarOpen(false);
+                  }}
+                  className="w-full"
+                  variant="outline"
+                  size="sm"
+                >
+                  {showDetails ? (
+                    <>
+                      <EyeOff className="w-4 h-4 mr-2" />
+                      Hide Details
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4 mr-2" />
+                      Show Details
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            <div className="flex-1" />
+
+            <div className="p-4 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/")}
+                className="w-full"
+              >
+                <HomeIcon className="w-4 h-4 mr-2" />
+                Back to Services
+              </Button>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 z-1000">
         <div className="px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden h-8 w-8"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
             <MapPin className="w-5 h-5 text-green-500" />
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
               Sync ~ Location
@@ -144,10 +220,30 @@ export default function LocationPage() {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {location && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 cursor-pointer hidden md:flex"
+                onClick={() => setShowDetails(!showDetails)}
+              >
+                {showDetails ? (
+                  <>
+                    <EyeOff className="w-4 h-4 mr-2" />
+                    Hide
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Show
+                  </>
+                )}
+              </Button>
+            )}
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 cursor-pointer"
+              className="h-8 w-8 cursor-pointer hidden md:flex"
               onClick={() => router.push("/")}
             >
               <HomeIcon className="w-4 h-4" />
@@ -240,65 +336,75 @@ export default function LocationPage() {
         ) : (
           <div className="h-full flex flex-col">
             {/* Location Info Card */}
-            <div className="absolute top-4 left-4 right-4 z-500 pointer-events-none">
-              <Card className="pointer-events-auto shadow-lg">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-green-500" />
-                    Your Location
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Latitude</p>
-                      <p className="font-mono font-semibold">
-                        {location.latitude.toFixed(6)}°
-                      </p>
+            {showDetails && (
+              <div className="absolute top-20 left-4 right-4 md:left-auto md:right-4 md:w-80 md:max-w-sm z-500 pointer-events-none">
+                <Card className="pointer-events-auto shadow-lg border">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-green-500" />
+                      Your Location
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm pt-2">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center p-2 bg-muted/30 rounded">
+                        <span className="text-xs text-muted-foreground">
+                          Latitude
+                        </span>
+                        <span className="font-mono font-semibold text-xs">
+                          {location.latitude.toFixed(6)}°
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-muted/30 rounded">
+                        <span className="text-xs text-muted-foreground">
+                          Longitude
+                        </span>
+                        <span className="font-mono font-semibold text-xs">
+                          {location.longitude.toFixed(6)}°
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-muted/30 rounded">
+                        <span className="text-xs text-muted-foreground">
+                          Accuracy
+                        </span>
+                        <span className="font-semibold text-xs">
+                          ±{Math.round(location.accuracy)}m
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Longitude</p>
-                      <p className="font-mono font-semibold">
-                        {location.longitude.toFixed(6)}°
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Accuracy</p>
-                    <p className="font-semibold">
-                      ±{Math.round(location.accuracy)} meters
-                    </p>
-                  </div>
-                  {location.address && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">Address</p>
-                      <p className="text-xs leading-relaxed">
-                        {location.address}
-                      </p>
-                    </div>
-                  )}
-                  <Button
-                    onClick={getLocation}
-                    disabled={loading}
-                    size="sm"
-                    className="w-full mt-2"
-                    variant="outline"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <Navigation className="w-4 h-4 mr-2" />
-                        Refresh Location
-                      </>
+                    {location.address && (
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Address
+                        </p>
+                        <p className="text-xs leading-relaxed text-foreground/90">
+                          {location.address}
+                        </p>
+                      </div>
                     )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+                    <Button
+                      onClick={getLocation}
+                      disabled={loading}
+                      size="sm"
+                      className="w-full mt-2"
+                      variant="outline"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <Navigation className="w-4 h-4 mr-2" />
+                          Refresh Location
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Map */}
             <div className="flex-1">
