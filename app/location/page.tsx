@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,6 +69,30 @@ export default function LocationPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const watchIdRef = useRef<number | null>(null);
+
+  const updateLocation = async (position: GeolocationPosition) => {
+    const locationData: LocationData = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+      timestamp: position.timestamp,
+    };
+
+    // Get address from coordinates using reverse geocoding
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${locationData.latitude}&lon=${locationData.longitude}`
+      );
+      const data = await response.json();
+      locationData.address = data.display_name;
+    } catch (error) {
+      console.error("Failed to fetch address:", error);
+    }
+
+    setLocation(locationData);
+    setLoading(false);
+  };
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -80,31 +104,30 @@ export default function LocationPage() {
 
     setLoading(true);
 
+    // Use getCurrentPosition for initial location with higher timeout
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const locationData: LocationData = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          timestamp: position.timestamp,
-        };
+        await updateLocation(position);
+        toast.success("Location found!", {
+          description: `Accuracy: ±${Math.round(position.coords.accuracy)}m`,
+        });
 
-        // Get address from coordinates using reverse geocoding
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${locationData.latitude}&lon=${locationData.longitude}`
-          );
-          const data = await response.json();
-          locationData.address = data.display_name;
-        } catch (error) {
-          console.error("Failed to fetch address:", error);
+        // Start watching position for continuous updates
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
         }
 
-        setLocation(locationData);
-        setLoading(false);
-        toast.success("Location found!", {
-          description: "Your current location has been detected",
-        });
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          updateLocation,
+          (error) => {
+            console.error("Watch position error:", error);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 5000,
+            timeout: 30000,
+          }
+        );
       },
       (error) => {
         setLoading(false);
@@ -119,7 +142,7 @@ export default function LocationPage() {
             errorMessage = "Location information unavailable.";
             break;
           case error.TIMEOUT:
-            errorMessage = "Location request timed out.";
+            errorMessage = "Location request timed out. Try again.";
             break;
         }
 
@@ -129,11 +152,20 @@ export default function LocationPage() {
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 30000,
         maximumAge: 0,
       }
     );
   };
+
+  // Cleanup watch position on unmount
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="flex h-screen bg-background flex-col">

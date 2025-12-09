@@ -21,11 +21,20 @@ export default function MapComponent({
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
+    // Calculate zoom based on accuracy (more accurate = closer zoom)
+    const getZoomLevel = (accuracy: number) => {
+      if (accuracy < 10) return 19;
+      if (accuracy < 50) return 18;
+      if (accuracy < 100) return 17;
+      if (accuracy < 500) return 16;
+      return 15;
+    };
+
     // Initialize map only once
     if (!mapRef.current) {
       const map = L.map(mapContainerRef.current, {
         center: [latitude, longitude],
-        zoom: 18,
+        zoom: getZoomLevel(accuracy),
         zoomControl: true,
         maxZoom: 20,
       });
@@ -110,7 +119,20 @@ export default function MapComponent({
     } else {
       // Update existing map
       const map = mapRef.current;
-      map.setView([latitude, longitude], 18);
+
+      // Calculate zoom based on accuracy
+      const getZoomLevel = (accuracy: number) => {
+        if (accuracy < 10) return 19;
+        if (accuracy < 50) return 18;
+        if (accuracy < 100) return 17;
+        if (accuracy < 500) return 16;
+        return 15;
+      };
+
+      // Smoothly pan to new location
+      map.flyTo([latitude, longitude], getZoomLevel(accuracy), {
+        duration: 0.5,
+      });
 
       // Clear existing layers except base tiles
       map.eachLayer((layer) => {
